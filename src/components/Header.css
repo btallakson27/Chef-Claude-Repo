@@ -1,16 +1,19 @@
 header {
-    display: flex;
-    padding: 30px;
-    background: white;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 11px;
+  height: 80px;
+  padding: 30px;
+  background-color: white;
+  box-shadow: ...
 }
 
-.header-img {
-    margin-right: 10px;
+header img {
+  width: 50px;
 }
 
-.header-text {
-    font-weight: 400;
+header h1 {
+  font-weight: 400;
+  margin: 0;
 }
