@@ -9,7 +9,7 @@ export default function Main(){
     const [recipe, setRecipe] = React.useState("")
 
     async function getRecipe() {
-        const response = await fetch("/api/recipe", {
+        const response = await fetch('https://chef-claude-repo.onrender.com/api/recipe', {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ingredients }),
