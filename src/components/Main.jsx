@@ -7,26 +7,53 @@ export default function Main(){
     const [ingredients, setIngredients] = React.useState([])
     const [recipe, setRecipe] = React.useState("")
     const [loading, setLoading] = React.useState(false)
+    const [error, setError] = React.useState(null)
+
+    // NEW: savedRecipes state initializes by reading from localStorage.
+    // The function inside useState() is a "lazy initializer" — it only runs once on mount.
+    // JSON.parse converts the stored string back into a JavaScript array.
+    // If nothing is saved yet, localStorage.getItem returns null, so we fall back to [].
+    const [savedRecipes, setSavedRecipes] = React.useState(
+        () => JSON.parse(localStorage.getItem("savedRecipes")) || []
+    )
 
     async function getRecipe() {
         setLoading(true)
-        const response = await fetch('https://chef-claude-repo.onrender.com/api/recipe', {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ingredients }),
-        })
+        setError(null)
+        try {
+            const response = await fetch('https://chef-claude-repo.onrender.com/api/recipe', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ingredients }),
+            })
+            if (!response.ok) throw new Error("Something went wrong. Please try again.")
+            const data = await response.json()
+            setRecipe(data.recipe)
+        } catch (err) {
+            setError(err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
 
-  const data = await response.json()
-  setRecipe(data.recipe)
-  setLoading(false)
-}
+    function addIngredient(formData) {
+        const newIngredient = formData.get("ingredient").trim()
+        if (!newIngredient) return
+        if (ingredients.length >= 10) return
+        if (ingredients.includes(newIngredient)) return
+        setIngredients(prevIngredients => [...prevIngredients, newIngredient])
+    }
 
-function addIngredient(formData){
-    const newIngredient=formData.get("ingredient")
-    setIngredients(prevIngredients => [...prevIngredients, newIngredient])
-    
-}
- /*why doees "ingredient" above need quotes? Because .get() expects a string key, which is literally the name attribute on that element below. .get() must receive the exact name, which is a string, so quotes are required. */
+    // NEW: saveRecipe adds the current recipe to savedRecipes state and
+    // also writes the updated array to localStorage so it persists on refresh.
+    // JSON.stringify converts the array to a string because localStorage
+    // can only store strings, not JavaScript objects or arrays.
+    function saveRecipe() {
+        if (!recipe) return
+        const updated = [...savedRecipes, recipe]
+        setSavedRecipes(updated)
+        localStorage.setItem("savedRecipes", JSON.stringify(updated))
+    }
 
     return (
         <main>
@@ -35,10 +62,12 @@ function addIngredient(formData){
                     type="text"
                     placeholder="e.g. oregano"
                     aria-label="Add ingredient"
-                    name="ingredient" /* whenever we're submitting a form, our inputs all need a name */
+                    name="ingredient"
                 />
-                <button>Add ingredient</button>
+                <button disabled={loading}>Add ingredient</button>
             </form>
+
+            {error && <p className="error-message">{error}</p>}
 
             {ingredients.length > 0 && <IngredientsList
             ingredients={ingredients}
@@ -47,9 +76,26 @@ function addIngredient(formData){
 
             {loading && <p className="loading-message">Chef Claude is cooking up your recipe...</p>}
 
-            {recipe && <ClaudeRecipe 
-            recipe={recipe}
-            />}
+            {/* NEW: The <> </> is a React Fragment — it lets us return two sibling elements
+                (ClaudeRecipe and the Save button) without adding an extra div to the DOM.
+                The Save Recipe button only appears when a recipe exists. */}
+            {recipe && <>
+                <ClaudeRecipe recipe={recipe} />
+                <button onClick={saveRecipe}>Save Recipe</button>
+            </>}
+
+            {/* NEW: This section only renders if there are saved recipes.
+                We map over the savedRecipes array and render a ClaudeRecipe
+                component for each one. The key prop is required by React whenever
+                you render a list — it helps React track which items changed. */}
+            {savedRecipes.length > 0 && (
+                <section className="saved-recipes">
+                    <h2>Saved Recipes</h2>
+                    {savedRecipes.map((r, i) => (
+                        <ClaudeRecipe key={i} recipe={r} />
+                    ))}
+                </section>
+            )}
         </main>
     )
 }
