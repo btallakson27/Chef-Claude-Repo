@@ -132,7 +132,7 @@ ul.ingredients-list > li {
 .ingredient-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 5px;
     padding-right: 10px;
 }
 
